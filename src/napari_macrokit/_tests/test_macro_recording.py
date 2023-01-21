@@ -68,7 +68,7 @@ def test_get_layer(make_napari_viewer, getter, adder, annotation):
 
     data = getter()
     name = "test"
-    getattr(viewer, adder)(data, name=name)
+    layer = getattr(viewer, adder)(data, name=name)
     assert napari.current_viewer() is viewer
 
     @macro.record
@@ -76,7 +76,7 @@ def test_get_layer(make_napari_viewer, getter, adder, annotation):
         pass
 
     assert len(macro) == 0
-    func(data)
+    func(layer)
     assert len(macro) == 1
     assert str(macro[0]) == f"func(viewer.layers[{name!r}])"
 
@@ -100,13 +100,13 @@ def test_get_layer_data(make_napari_viewer, getter, adder, annotation):
 
     data = getter()
     name = "test"
-    getattr(viewer, adder)(data, name=name)
+    layer = getattr(viewer, adder)(data, name=name)
 
     @macro.record
     def func(data: annotation):
         pass
 
     assert len(macro) == 0
-    func(data)
+    func(layer.data)
     assert len(macro) == 1
     assert str(macro[0]) == f"func(viewer.layers[{name!r}].data)"

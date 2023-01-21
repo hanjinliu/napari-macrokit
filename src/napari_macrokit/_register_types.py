@@ -13,6 +13,8 @@ from ._macrokit_ext import register_new_type
 def register_all():
     _register_builtin_types()
     _register_napari_types()
+    _register_magicgui_types()
+    _register_storage_repr()
 
 
 def _register_builtin_types():
@@ -89,6 +91,7 @@ def _register_napari_types():
     _viewer_symbol = Symbol.var("viewer")
     _viewer_ = Mock(_viewer_symbol)
 
+    register_type(np.dtype, lambda e: e.name)
     register_type(napari.Viewer, lambda _: _viewer_symbol)
     register_type(Layer, lambda layer: _viewer_.layers[layer.name].expr)
 
@@ -147,3 +150,42 @@ def _register_napari_types():
         VectorsData,
         lambda data: _viewer_.layers[find_name(data, Vectors)].data.expr,
     )
+
+
+def _register_magicgui_types():
+    import magicgui as mgui
+    from magicgui.widgets import Widget
+
+    from .types import Stored
+
+    def _get_choice(w: Widget):
+        ann = w.annotation
+        assert issubclass(ann, Stored), ann
+        return ann._get_choice(w)
+
+    def _store_value(w: Widget, value, return_type):
+        assert issubclass(return_type, Stored), return_type
+        return return_type._store_value(w, value, return_type)
+
+    mgui.register_type(
+        Stored, choices=_get_choice, return_callback=_store_value
+    )
+
+
+def _register_storage_repr():
+    import numpy as np
+    import pandas as pd
+
+    from .types import Stored
+
+    @Stored.register_repr(np.ndarray)
+    def _np_repr(value: np.ndarray) -> str:
+        return f"{value.shape} array of {value.dtype}"
+
+    @Stored.register_repr(pd.Series)
+    def _series_repr(value: pd.Series) -> str:
+        return f"{value.shape} Series of {value.dtype}"
+
+    @Stored.register_repr(pd.DataFrame)
+    def _df_repr(value: pd.DataFrame) -> str:
+        return f"{value.shape} DataFrame"

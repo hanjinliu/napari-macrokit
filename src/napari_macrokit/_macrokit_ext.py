@@ -28,13 +28,25 @@ def register_new_type(
 
 def register_new_type(tp, function=None):
     def wrapper(f):
-        _NEW_TYPES[tp] = function
+        _NEW_TYPES[tp] = f
         return f
 
     return wrapper if function is None else wrapper(function)
 
 
 class NapariMacro(Macro):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self) -> str:
+        out = []
+        for line in str(self).split("\n"):
+            if line.startswith("\t"):
+                out.append(f"... {line}")
+            else:
+                out.append(f">>> {line}")
+        return "\n".join(out)
+
     def record(self, obj):
         if isinstance(obj, type):
             return super().record(obj)
@@ -56,7 +68,7 @@ def _record_function(func: _F, macro: NapariMacro) -> _F:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        nonlocal sig, symbolizers
+        nonlocal sig, symbolizers, func
 
         macro_args, macro_kwargs = _get_macro_arguments(
             sig, symbolizers, *args, **kwargs
@@ -65,6 +77,9 @@ def _record_function(func: _F, macro: NapariMacro) -> _F:
         expr = Expr.parse_call(func, macro_args, macro_kwargs)
         macro.append(expr)
         return out
+
+    # To avoid FunctionGui RecursionError
+    wrapper.__name__ = f"<recordable>.{func.__name__}"
 
     if hasattr(func, "__get__"):
         wrapper.__get__ = lambda obj, objtype=None: _record_method(
