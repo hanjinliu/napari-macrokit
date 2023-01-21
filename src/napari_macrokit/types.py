@@ -165,14 +165,14 @@ class Stored(Generic[_T], metaclass=_StoredMeta):
     _repr_map: dict[type[_U], Callable[[_U], str]] = {}
 
     @classmethod
-    def new(cls, tp: type[_U], maxsize: int | None = 12) -> Stored[_U]:
+    def new(cls, tp: type[_U], maxsize: int | None = None) -> Stored[_U]:
         """Create a new storage with given maximum size."""
         i = 0
         while (tp, i) in _StoredMeta._instances:
             i += 1
         outtype = Stored[tp, 0]
         if maxsize is None:
-            outtype._maxsize = float("inf")
+            maxsize = _maxsize_for_type(tp)
         else:
             if not isinstance(maxsize, int) or maxsize <= 0:
                 raise TypeError("maxsize must be a positive integer")
@@ -272,10 +272,11 @@ class Stored(Generic[_T], metaclass=_StoredMeta):
         if outtype := _StoredMeta._instances.get(key):
             return outtype
         name = f"Stored[{_tp.__name__}, {_hash!r}]"
+
         ns = {
             "_store": [],
             "_hash_value": _hash,
-            "_maxsize": 12,
+            "_maxsize": _maxsize_for_type(_tp),
         }
         outtype: cls = _StoredMeta(name, (cls,), ns)
         outtype.__args__ = (_tp,)
@@ -295,6 +296,15 @@ def _repr_like(x: Any):
         return lines[0]
     else:
         return lines[0] + " ... "
+
+
+def _maxsize_for_type(tp: type[_T]) -> int:
+    if hasattr(tp, "__array__"):
+        return 12
+    elif tp is object:
+        return 120
+    else:
+        return 10000
 
 
 def split_annotated_type(annotation: _AnnotatedAlias) -> tuple[Any, dict]:

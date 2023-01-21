@@ -5,6 +5,7 @@ register_all()
 
 del register_all
 
-from .core import get_macro, record, recordable_magicgui
+from ._widget import QCodeEditor
+from .core import get_macro
 
-__all__ = ["get_macro", "record", "recordable_magicgui"]
+__all__ = ["get_macro", "QCodeEditor"]

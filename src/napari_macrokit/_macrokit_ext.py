@@ -5,7 +5,7 @@ from functools import wraps
 from types import MethodType
 from typing import Any, Callable, Literal, TypeVar, Union, overload
 
-from macrokit import Expr, Macro, Symbol, symbol
+from macrokit import Expr, Head, Macro, Symbol, symbol
 
 from ._type_resolution import resolve_single_type
 
@@ -48,17 +48,67 @@ class NapariMacro(Macro):
         return "\n".join(out)
 
     def record(self, obj):
-        if isinstance(obj, type):
-            return super().record(obj)
-        elif isinstance(obj, Callable):
+        if isinstance(obj, Callable) and not isinstance(obj, type):
             return _record_function(obj, macro=self)
-        return super().record(obj)
+        raise TypeError(f"Cannot record {type(obj)}")
+
+    def magicgui(
+        self,
+        function: Callable | None = None,
+        *,
+        layout: str = "vertical",
+        scrollable: bool = False,
+        labels: bool = True,
+        tooltips: bool = True,
+        call_button: bool | str | None = None,
+        auto_call: bool = False,
+        result_widget: bool = False,
+        main_window: bool = False,
+        persist: bool = False,
+        raise_on_unknown: bool = False,
+        **param_options: dict,
+    ):
+        """
+        A shortcut for creating a recordable magicgui widget.
+
+        >>> @macro.magicgui
+        >>> def func(a: int, b: str):
+        >>>     ...
+
+        is equivalent to
+
+        >>> @magicgui
+        >>> @macro.record
+        >>> def func(a: int, b: str):
+        >>>     ...
+        """
+        from magicgui import magicgui
+
+        def wrapper(func):
+            mfunc = self.record(func)
+            return magicgui(
+                mfunc,
+                layout=layout,
+                scrollable=scrollable,
+                labels=labels,
+                tooltips=tooltips,
+                call_button=call_button,
+                auto_call=auto_call,
+                result_widget=result_widget,
+                main_window=main_window,
+                persist=persist,
+                raise_on_unknown=raise_on_unknown,
+                **param_options,
+            )
+
+        return wrapper if function is None else wrapper(function)
 
 
 _F = TypeVar("_F", bound=Callable)
 
 
 def _record_function(func: _F, macro: NapariMacro) -> _F:
+    """Convert a function into a macro recordable one."""
     sig = inspect.signature(func)
     symbolizers: dict[str, Symbolizer] = {}
 
@@ -75,6 +125,9 @@ def _record_function(func: _F, macro: NapariMacro) -> _F:
         )
         out = func(*args, **kwargs)
         expr = Expr.parse_call(func, macro_args, macro_kwargs)
+        if _has_return_annotation(sig):
+            expr = Expr(Head.assign, [Symbol.asvar(out), expr])
+
         macro.append(expr)
         return out
 
@@ -92,6 +145,7 @@ _M = TypeVar("_M", bound=MethodType)
 
 
 def _record_method(func: _M, macro: NapariMacro) -> _M:
+    """Convert a method into a macro recordable one."""
     sig = inspect.signature(func)
     symbolizers: dict[str, Symbolizer] = {}
 
@@ -108,6 +162,8 @@ def _record_method(func: _M, macro: NapariMacro) -> _M:
         )
         out = func(*args, **kwargs)
         expr = Expr.parse_method(func.__self__, func, macro_args, macro_kwargs)
+        if _has_return_annotation(sig):
+            expr = Expr(Head.assign, [Symbol.asvar(out), expr])
 
         macro.append(expr)
         return out
@@ -141,3 +197,8 @@ def _get_macro_arguments(
 
     macro_args = tuple(macro_kwargs.pop(argkeys[i]) for i in range(nargs))
     return macro_args, macro_kwargs
+
+
+def _has_return_annotation(sig: inspect.Signature) -> bool:
+    ann = sig.return_annotation
+    return ann is not inspect.Parameter.empty
