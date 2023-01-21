@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from types import MethodType
 from typing import Any, Callable, Literal, TypeVar, Union, overload
 
 from macrokit import Expr, Head, Macro, Symbol, symbol
@@ -109,6 +108,9 @@ _F = TypeVar("_F", bound=Callable)
 
 def _record_function(func: _F, macro: NapariMacro) -> _F:
     """Convert a function into a macro recordable one."""
+    if hasattr(func, "func"):  # partial method
+        return _record_function(func.func, macro)
+
     sig = inspect.signature(func)
     symbolizers: dict[str, Symbolizer] = {}
 
@@ -123,7 +125,8 @@ def _record_function(func: _F, macro: NapariMacro) -> _F:
         macro_args, macro_kwargs = _get_macro_arguments(
             sig, symbolizers, *args, **kwargs
         )
-        out = func(*args, **kwargs)
+        with macro.blocked():
+            out = func(*args, **kwargs)
         expr = Expr.parse_call(func, macro_args, macro_kwargs)
         if _has_return_annotation(sig):
             expr = Expr(Head.assign, [Symbol.asvar(out), expr])
@@ -133,40 +136,6 @@ def _record_function(func: _F, macro: NapariMacro) -> _F:
 
     # To avoid FunctionGui RecursionError
     wrapper.__name__ = f"<recordable>.{func.__name__}"
-
-    if hasattr(func, "__get__"):
-        wrapper.__get__ = lambda obj, objtype=None: _record_method(
-            func.__get__(obj, objtype), macro
-        )
-    return wrapper
-
-
-_M = TypeVar("_M", bound=MethodType)
-
-
-def _record_method(func: _M, macro: NapariMacro) -> _M:
-    """Convert a method into a macro recordable one."""
-    sig = inspect.signature(func)
-    symbolizers: dict[str, Symbolizer] = {}
-
-    for name, param in sig.parameters.items():
-        ann = param.annotation
-        symbolizers[name] = _get_symbolizer(ann)
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        nonlocal sig, symbolizers
-
-        macro_args, macro_kwargs = _get_macro_arguments(
-            sig, symbolizers, *args, **kwargs
-        )
-        out = func(*args, **kwargs)
-        expr = Expr.parse_method(func.__self__, func, macro_args, macro_kwargs)
-        if _has_return_annotation(sig):
-            expr = Expr(Head.assign, [Symbol.asvar(out), expr])
-
-        macro.append(expr)
-        return out
 
     return wrapper
 

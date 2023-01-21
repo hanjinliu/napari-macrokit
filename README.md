@@ -7,19 +7,67 @@
 [![codecov](https://codecov.io/gh/hanjinliu/napari-macrokit/branch/main/graph/badge.svg)](https://codecov.io/gh/hanjinliu/napari-macrokit)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-macrokit)](https://napari-hub.org/plugins/napari-macrokit)
 
-Executable script generation for napari plugins
+Executable script generation for napari plugins.
 
-----------------------------------
+This napari plugin aims at making image analysis reproducible with arbitrary input/output types.
+
+
+## Example
+
+Suppose you have two modules that uses `napari-macrokit`.
+
+```python
+# napari_module_0.py
+
+from napari.types import ImageData
+from scipy import ndimage as ndi
+from napari_macrokit import get_macro
+
+macro = get_macro("napari-module-0")
+
+@macro.record
+def gaussian_filter(image: ImageData, sigma: float) -> ImageData:
+    return ndi.gaussian_filter(image, sigma=sigma)
+
+@macro.record
+def threshold(image: ImageData, value: float) -> ImageData:
+    return image > value
+```
+
+```python
+# napari_module_1.py
+
+from napari.types import ImageData
+import numpy as np
+from napari_macrokit import get_macro
+macro = get_macro("napari-module-1")
+
+@macro.record
+def estimate_background(image: ImageData) -> float:
+    return np.percentile(image, 10.0)
+
+```
+
+```python
+import numpy as np
+from napari_macrokit import get_merged_macro
+from napari_module_0 import gaussian_filter, threshold
+from napari_module_1 import estimate_background
+
+# global_macro will record all the macro available at this point
+global_macro = get_merged_macro()
+
+# start image analysis!
+image = np.random.random((100, 100))
+
+out = gaussian_filter(image, 2.0)
+thresh = estimate_background(out)
+binary = threshold(out, thresh)
+```
+
+---------------------------------
 
 This [napari] plugin was generated with [Cookiecutter] using [@napari]'s [cookiecutter-napari-plugin] template.
-
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
-
-and review the napari docs for plugin developers:
-https://napari.org/stable/plugins/index.html
--->
 
 ## Installation
 

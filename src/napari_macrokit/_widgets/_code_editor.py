@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+from macrokit import Macro
 from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 from qtpy.QtCore import Qt
@@ -53,7 +54,9 @@ class QLineNumberArea(QtW.QWidget):
 
 
 class QCodeEditor(QtW.QPlainTextEdit):
-    def __init__(self, parent: QtW.QWidget | None = None):
+    def __init__(
+        self, parent: QtW.QWidget | None = None, macro: Macro | None = None
+    ):
         super().__init__(parent)
         if sys.platform == "win32":
             _font = "Consolas"
@@ -80,15 +83,20 @@ class QCodeEditor(QtW.QPlainTextEdit):
 
         self.syntaxHighlight()
 
-        from .core import get_macro
+        self._macro = macro
+        if macro is not None:
+            self.connectMacro(macro)
 
-        macro = get_macro()
+    @property
+    def macro(self) -> Macro:
+        return self._macro
 
+    def connectMacro(self, macro):
         @macro.callbacks.append
         def _on_recorded(expr):
             self.appendPlainText(str(expr))
 
-        self.setPlainText(str(macro))
+        return self.setPlainText(str(macro))
 
     def tabSize(self):
         metrics = self.fontMetrics()
@@ -221,7 +229,7 @@ class QCodeEditor(QtW.QPlainTextEdit):
     def _highlight_current_line(self):
         extraSelections = []
 
-        bgcolor = self.palette().color(self.backgroundRole())
+        bgcolor = self.palette().color(self.parentWidget().backgroundRole())
         _highlight_color = QtGui.QColor(
             bgcolor.red() - 6, bgcolor.green() - 6, bgcolor.blue() + 6
         )

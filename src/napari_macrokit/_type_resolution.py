@@ -1,3 +1,5 @@
+# mostly copied from https://github.com/pyapp-kit/magicgui/blob/main/src/magicgui/_type_resolution.py
+
 import sys
 import types
 import typing

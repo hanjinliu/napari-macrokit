@@ -5,7 +5,7 @@ register_all()
 
 del register_all
 
-from ._widget import QCodeEditor
-from .core import get_macro
+from ._widgets import QMacroView
+from .core import get_macro, get_merged_macro, list_macro_keys
 
-__all__ = ["get_macro", "QCodeEditor"]
+__all__ = ["get_macro", "list_macro_keys", "get_merged_macro", "QMacroView"]

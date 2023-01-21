@@ -3,8 +3,8 @@ display_name: napari macro-kit
 contributions:
   commands:
     - id: napari-macrokit.make_qwidget
-      python_name: napari_macrokit._widget:QCodeEditor
-      title: Show macro
+      python_name: napari_macrokit:QMacroView
+      title: View macro scripts
   widgets:
     - command: napari-macrokit.make_qwidget
-      display_name: Example QWidget
+      display_name: napari-macrokit
