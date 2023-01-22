@@ -15,8 +15,8 @@ from macrokit import (
     symbol,
 )
 
-from ._literals import bool as Bool
-from ._literals import int as Int
+from napari_macrokit import _literals as _lit
+
 from ._type_resolution import resolve_single_type
 
 _NEW_TYPES: dict[type, Callable[[Any], str]] = {}
@@ -195,16 +195,24 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
         else:
             # If the function returned a value that is needed to be recorded,
             # then interpret the output and record as "var = func(...)"
-            if isinstance(out, Sequence) and len(out) < 10:
+            if (
+                isinstance(out, Sequence)
+                and not isinstance(out, str)
+                and len(out) < 10
+            ):
                 sym_out = store_sequence(out)
             else:
-                # NOTE: Small Python integers always have the same ID, so
+                # NOTE: Python literals usually have the same ID, which
                 # causes some fatal bugs in macro recording. As a workaround,
                 # we convert them into custom int/bool type.
                 if isinstance(out, bool):
-                    out = Bool(out)
+                    out = _lit.bool(out)
                 elif isinstance(out, int):
-                    out = Int(out)
+                    out = _lit.int(out)
+                elif isinstance(out, float):
+                    out = _lit.float(out)
+                elif isinstance(out, str):
+                    out = _lit.str(out)
                 sym_out = Symbol.asvar(out)
             expr = Expr(Head.assign, [sym_out, expr])
         macro.append(expr)

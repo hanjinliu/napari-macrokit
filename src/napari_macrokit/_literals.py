@@ -61,3 +61,11 @@ class bool(builtins.int):
     @overload
     def __rxor__(self, __x: builtins.int) -> builtins.int:
         ...
+
+
+class float(builtins.float):
+    __doc__ = builtins.float.__doc__
+
+
+class str(builtins.str):
+    __doc__ = builtins.str.__doc__
