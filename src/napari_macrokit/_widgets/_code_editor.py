@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from macrokit import Macro
+from macrokit import BaseMacro
 from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 from qtpy.QtCore import Qt
@@ -55,7 +55,7 @@ class QLineNumberArea(QtW.QWidget):
 
 class QCodeEditor(QtW.QPlainTextEdit):
     def __init__(
-        self, parent: QtW.QWidget | None = None, macro: Macro | None = None
+        self, parent: QtW.QWidget | None = None, macro: BaseMacro | None = None
     ):
         super().__init__(parent)
         if sys.platform == "win32":
@@ -87,14 +87,20 @@ class QCodeEditor(QtW.QPlainTextEdit):
         if macro is not None:
             self.connectMacro(macro)
 
+        self.setMinimumHeight(100)
+
     @property
-    def macro(self) -> Macro:
+    def macro(self) -> BaseMacro:
         return self._macro
 
-    def connectMacro(self, macro):
-        @macro.callbacks.append
-        def _on_recorded(expr):
+    def connectMacro(self, macro: BaseMacro):
+        @macro.on_appended.append
+        def _on_appended(expr):
             self.appendPlainText(str(expr))
+
+        @macro.on_popped.append
+        def _on_removed(expr):
+            self.eraseLast()
 
         return self.setPlainText(str(macro))
 
@@ -265,3 +271,12 @@ class QCodeEditor(QtW.QPlainTextEdit):
     def setText(self, text: str):
         """Set the text."""
         self.setPlainText(text.replace("\n", "\u2029"))
+
+    def eraseLast(self):
+        """Erase the last line."""
+        cursor = self.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
+        cursor.select(QtGui.QTextCursor.SelectionType.LineUnderCursor)
+        cursor.removeSelectedText()
+        cursor.deletePreviousChar()
+        self.setTextCursor(cursor)

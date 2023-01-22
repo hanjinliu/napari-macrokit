@@ -11,12 +11,16 @@ _MACROS: dict[str, NapariMacro] = {}
 
 def get_macro(name: str = "main") -> NapariMacro:
     from ._macrokit_ext import NapariMacro
+    from ._widgets import QMacroView
 
     if not isinstance(name, str):
         raise TypeError(f"Macro name must be a string, got {type(name)}.")
     macro = _MACROS.get(name, None)
     if macro is None:
         macro = _MACROS[name] = NapariMacro()
+
+    if widget := QMacroView.current():
+        widget._tabwidget.add_macro(macro, name)
     return macro
 
 
@@ -30,7 +34,8 @@ def merge_macros(
         raise ValueError("Input macro list has duplicate references.")
     new = get_macro(name)
     for macro in macros:
-        macro.callbacks.append(new.append)
+        macro.on_appended.append(new.append)
+        macro.on_popped.append(lambda: new.pop())
     return new
 
 

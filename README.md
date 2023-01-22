@@ -11,8 +11,66 @@ Executable script generation for napari plugins.
 
 This napari plugin aims at making image analysis reproducible with arbitrary input/output types.
 
+## Usage
 
-## Example
+Create a macro object, decorate functions with `record` method and run!
+
+```python
+from napari_macrokit import get_macro
+
+macro = get_macro("my-plugin-specifier")  # get macro object
+
+# define a function
+@macro.record
+def add(a: float, b: float) -> float:
+    return a + b
+
+# run
+result = add(3.2, 5.4)
+add(result, 1.0)
+
+macro
+
+# Out:
+# >>> var054 = add(3.2, 5.4)
+# >>> var07395f0c = add(var054, 1.0)
+```
+
+## Record GUI Operations
+
+You can use recordable functions in your widgets to keep tracks of GUI operations.
+More simply, you can double-decorate functions with `record` and `magicgui`.
+
+```python
+import numpy as np
+from magicgui import magicgui
+import napari
+from napari.types import ImageData
+from napari_macrokit import get_macro
+
+macro = get_macro("my-plugin-specifier")  # get macro object
+
+# define recordable magicgui
+@magicgui
+@macro.record
+def add(image: ImageData, b: float) -> ImageData:
+    return image + b
+
+viewer = napari.Viewer()  # launch a viewer
+viewer.add_image(np.random.random((100, 100)))  # image data
+viewer.window.add_dock_widget(add)  # add magicgui to the viewer
+```
+
+Running add twice in GUI and you'll find macro updated like below.
+
+```python
+macro
+# Out
+# >>> var0 = add(viewer.layers['Image'].data, 0.06)
+# >>> var024 = add(var0, 0.12)
+```
+
+## Example of Combining Plugins
 
 Suppose you have two modules that uses `napari-macrokit`.
 
@@ -48,6 +106,8 @@ def estimate_background(image: ImageData) -> float:
 
 ```
 
+You can use functions from both modules to build a analysis workflow by creating a merged macro object with `get_merged_macro` function.
+
 ```python
 import numpy as np
 from napari_macrokit import get_merged_macro
@@ -63,7 +123,14 @@ image = np.random.random((100, 100))
 out = gaussian_filter(image, 2.0)
 thresh = estimate_background(out)
 binary = threshold(out, thresh)
+
+macro
+# Out
+# >>> var5c0b2 = gaussian_filter(var0, 2.0)
+# >>> var5b8c0 = estimate_background(var5c0b2)
+# >>> var5c0c4 = threshold(var5c0b2, var5b8c0)
 ```
+
 
 ---------------------------------
 

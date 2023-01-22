@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 import inspect
+from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Literal, TypeVar, Union, overload
+from typing import Any, Callable, Literal, Sequence, TypeVar, Union, overload
 
-from macrokit import Expr, Head, Macro, Symbol, symbol
+from macrokit import (
+    BaseMacro,
+    Expr,
+    Head,
+    Symbol,
+    store,
+    store_sequence,
+    symbol,
+)
 
+from ._literals import bool as Bool
+from ._literals import int as Int
 from ._type_resolution import resolve_single_type
 
 _NEW_TYPES: dict[type, Callable[[Any], str]] = {}
+_F = TypeVar("_F", bound=Callable)
 _F1 = TypeVar("_F1", bound=Callable[[Any], str])
 Symbolizer = Callable[[Any], Union[Symbol, Expr]]
 
@@ -33,7 +45,7 @@ def register_new_type(tp, function=None):
     return wrapper if function is None else wrapper(function)
 
 
-class NapariMacro(Macro):
+class NapariMacro(BaseMacro):
     def __init__(self):
         super().__init__()
 
@@ -46,10 +58,23 @@ class NapariMacro(Macro):
                 out.append(f">>> {line}")
         return "\n".join(out)
 
-    def record(self, obj):
-        if isinstance(obj, Callable) and not isinstance(obj, type):
-            return _record_function(obj, macro=self)
-        raise TypeError(f"Cannot record {type(obj)}")
+    @overload
+    def record(self, obj: _F, *, merge: bool = False) -> _F:
+        ...
+
+    @overload
+    def record(
+        self, obj: Literal[None], *, merge: bool = False
+    ) -> Callable[[_F], _F]:
+        ...
+
+    def record(self, obj=None, *, merge: bool = False):
+        def wrapper(f):
+            if isinstance(f, Callable) and not isinstance(f, type):
+                return _record_function(f, macro=self, merge=merge)
+            raise TypeError(f"Cannot record {type(f)}")
+
+        return wrapper if obj is None else wrapper(obj)
 
     def magicgui(
         self,
@@ -84,7 +109,7 @@ class NapariMacro(Macro):
         from magicgui import magicgui
 
         def wrapper(func):
-            mfunc = self.record(func)
+            mfunc = self.record(func, merge=auto_call)
             return magicgui(
                 mfunc,
                 layout=layout,
@@ -103,40 +128,89 @@ class NapariMacro(Macro):
         return wrapper if function is None else wrapper(function)
 
 
-_F = TypeVar("_F", bound=Callable)
+_TYPES_NOT_TO_RECORD: set[type] = {type(None)}
 
 
-def _record_function(func: _F, macro: NapariMacro) -> _F:
+def set_unlinked(*types: type):
+    """Set types that will not be tracked as output."""
+    _TYPES_NOT_TO_RECORD.clear()
+    _types = set(types)
+    if None in _types:
+        _types.discard(None)
+        _types.add(type(None))
+    _TYPES_NOT_TO_RECORD.clear()
+    _TYPES_NOT_TO_RECORD.update(_types)
+
+
+@contextmanager
+def set_unlinked_context(*types: type):
+    """Set types that will not be tracked as output."""
+    _types = set(types)
+    if None in _types:
+        _types.discard(None)
+        _types.add(type(None))
+
+    _old_state = _TYPES_NOT_TO_RECORD.copy()
+    _TYPES_NOT_TO_RECORD.clear()
+    _TYPES_NOT_TO_RECORD.update(_types)
+    try:
+        yield
+    finally:
+        _TYPES_NOT_TO_RECORD.clear()
+        _TYPES_NOT_TO_RECORD.update(_old_state)
+
+
+def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
     """Convert a function into a macro recordable one."""
-    if hasattr(func, "func"):  # partial method
-        return _record_function(func.func, macro)
+    if hasattr(_func_, "func"):  # partial
+        return _record_function(_func_.func, macro)
 
-    sig = inspect.signature(func)
+    sig = inspect.signature(_func_)
     symbolizers: dict[str, Symbolizer] = {}
 
     for name, param in sig.parameters.items():
         ann = param.annotation
         symbolizers[name] = _get_symbolizer(ann)
 
-    @wraps(func)
+    @wraps(_func_)
     def wrapper(*args, **kwargs):
-        nonlocal sig, symbolizers, func
+        nonlocal sig, symbolizers, _func_, merge
 
         macro_args, macro_kwargs = _get_macro_arguments(
             sig, symbolizers, *args, **kwargs
         )
+        # Run function with macro blocked (otherwise recorded macro
+        # will call the inner function twice).
         with macro.blocked():
-            out = func(*args, **kwargs)
-        expr = Expr.parse_call(func, macro_args, macro_kwargs)
-        if _has_return_annotation(sig):
-            expr = Expr(Head.assign, [Symbol.asvar(out), expr])
+            out = _func_(*args, **kwargs)
+        expr = Expr.parse_call(_func_, macro_args, macro_kwargs)
 
+        # If the last function call is the same function, merge with the last
+        if merge and _get_last_call_name(macro) == expr.args[0]:
+            macro.pop()
+
+        for tp in _TYPES_NOT_TO_RECORD:
+            if isinstance(out, tp):
+                break
+        else:
+            # If the function returned a value that is needed to be recorded,
+            # then interpret the output and record as "var = func(...)"
+            if isinstance(out, Sequence) and len(out) < 10:
+                sym_out = store_sequence(out)
+            else:
+                # NOTE: Small Python integers always have the same ID, so
+                # causes some fatal bugs in macro recording. As a workaround,
+                # we convert them into custom int/bool type.
+                if isinstance(out, bool):
+                    out = Bool(out)
+                elif isinstance(out, int):
+                    out = Int(out)
+                sym_out = Symbol.asvar(out)
+            expr = Expr(Head.assign, [sym_out, expr])
         macro.append(expr)
         return out
 
-    # To avoid FunctionGui RecursionError
-    wrapper.__name__ = f"<recordable>.{func.__name__}"
-
+    store(wrapper)
     return wrapper
 
 
@@ -168,6 +242,14 @@ def _get_macro_arguments(
     return macro_args, macro_kwargs
 
 
-def _has_return_annotation(sig: inspect.Signature) -> bool:
-    ann = sig.return_annotation
-    return ann is not inspect.Parameter.empty
+def _get_last_call_name(macro: NapariMacro):
+    if len(macro) == 0:
+        return None
+    last_expr = macro[-1]
+    if last_expr.head is Head.assign:
+        last_call_expr = last_expr.args[1]
+    else:
+        last_call_expr = last_expr
+    if last_call_expr.head is Head.call:
+        return last_call_expr.args[0]
+    return None

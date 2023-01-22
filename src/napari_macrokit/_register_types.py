@@ -38,19 +38,9 @@ def _register_builtin_types():
     register_type(
         datetime.datetime,
         lambda e: Expr.parse_call(
-            _datetime, (e.year, e.month, e.day, e.hour, e.minute), {}
+            _datetime, (e.year, e.month, e.day, e.hour, e.minute, e.second), {}
         ),
     )
-
-    @register_type(range)
-    def _fmt_range(e: range) -> str:
-        if e.step == 1:
-            if e.start == 0:
-                return f"range({e.stop})"
-            else:
-                return f"range({e.start}, {e.stop})"
-        else:
-            return f"range({e.start}, {e.stop}, {e.step})"
 
     register_type(
         datetime.date,
@@ -68,7 +58,7 @@ def _register_builtin_types():
 def _register_numpy_types():
     register_type(np.dtype, lambda e: e.name)
     register_type(np.integer, str)
-    register_type(np.floating, str)
+    register_type(np.floating, lambda e: str(round(e, 8)))
     register_type(np.complex_, str)
     register_type(np.bool_, str)
 
@@ -102,15 +92,15 @@ def _register_napari_types():
     register_type(Layer, lambda layer: _viewer_.layers[layer.name].expr)
 
     def find_name(data: np.ndarray, tp: type[Layer]):
-        viewer = napari.current_viewer()
         out = None
-        if viewer is not None:
-            for layer in viewer.layers:
-                if not isinstance(layer, tp):
-                    continue
-                if layer.data is data:
-                    out = layer.name
-                    break
+        if id(data) not in Symbol._variables:
+            if viewer := napari.current_viewer():
+                for layer in viewer.layers:
+                    if not isinstance(layer, tp):
+                        continue
+                    if layer.data is data:
+                        out = layer.name
+                        break
         if out is None:
             return symbol(data)
         return _viewer_.layers[out].data.expr
@@ -118,18 +108,18 @@ def _register_napari_types():
     def find_name_1(
         data: list[np.ndarray], tp: type[Shapes | Surface]
     ) -> str | None:
-        viewer = napari.current_viewer()
         out = None
-        if viewer is not None:
-            for layer in viewer.layers:
-                if not isinstance(layer, tp):
-                    continue
-                layer_data = layer.data
-                if len(layer_data) != len(data):
-                    continue
-                if all(a is b for a, b in zip(layer_data, data)):
-                    out = layer.name
-                    break
+        if id(data) not in Symbol._variables:
+            if viewer := napari.current_viewer():
+                for layer in viewer.layers:
+                    if not isinstance(layer, tp):
+                        continue
+                    layer_data = layer.data
+                    if len(layer_data) != len(data):
+                        continue
+                    if all(a is b for a, b in zip(layer_data, data)):
+                        out = layer.name
+                        break
         if out is None:
             return symbol(data)
         return _viewer_.layers[out].data.expr

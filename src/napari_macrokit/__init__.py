@@ -5,7 +5,15 @@ register_all()
 
 del register_all
 
+from ._macrokit_ext import set_unlinked, set_unlinked_context
 from ._widgets import QMacroView
 from .core import get_macro, get_merged_macro, list_macro_keys
 
-__all__ = ["get_macro", "list_macro_keys", "get_merged_macro", "QMacroView"]
+__all__ = [
+    "get_macro",
+    "list_macro_keys",
+    "get_merged_macro",
+    "QMacroView",
+    "set_unlinked",
+    "set_unlinked_context",
+]

@@ -1,6 +1,7 @@
 import napari
+import numpy as np
 import pytest
-from macrokit import symbol
+from macrokit import Symbol, symbol
 
 from napari_macrokit._macrokit_ext import NapariMacro
 
@@ -21,9 +22,9 @@ def test_function_call():
     assert len(macro) == 2
     func(a=1, b=2)
     assert len(macro) == 3
-    assert str(macro[0]) == "func(1, 2)"
-    assert str(macro[1]) == "func(1, b=2)"
-    assert str(macro[2]) == "func(a=1, b=2)"
+    assert str(macro[0]).split(" = ")[1] == "func(1, 2)"
+    assert str(macro[1]).split(" = ")[1] == "func(1, b=2)"
+    assert str(macro[2]).split(" = ")[1] == "func(a=1, b=2)"
 
 
 @pytest.mark.parametrize(
@@ -110,3 +111,29 @@ def test_get_layer_data(make_napari_viewer, getter, adder, annotation):
     func(layer.data)
     assert len(macro) == 1
     assert str(macro[0]) == f"func(viewer.layers[{name!r}].data)"
+
+
+def test_layer_data_tuple():
+    from napari.types import ImageData, LayerDataTuple
+
+    macro = NapariMacro()
+
+    @macro.record
+    def func(data: ImageData) -> LayerDataTuple:
+        assert isinstance(data, np.ndarray)
+        return data, "name", {}
+
+    @macro.record
+    def func2(data: ImageData) -> LayerDataTuple:
+        assert isinstance(data, np.ndarray)
+        return data, "name", {"blending": "additive"}
+
+    data = _utils.image_data()
+    out = func(data)
+    out2 = func2(out[0])
+
+    _data = Symbol.asvar(data)
+    _out = Symbol.asvar(out)
+    _out2 = Symbol.asvar(out2)
+    assert str(macro[0]) == f"{_out} = func({_data})"
+    assert str(macro[1]) == f"{_out2} = func2({_out}[0])"

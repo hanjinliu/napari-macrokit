@@ -6,8 +6,13 @@ from qtpy import QtWidgets as QtW
 
 from ._code_editor import QCodeEditor
 
+if TYPE_CHECKING:
+    from napari_macrokit._macrokit_ext import NapariMacro
+
 
 class QMacroView(QtW.QWidget):
+    _current_widget = None
+
     def __init__(self, parent: QtW.QWidget | None = None):
         super().__init__(parent)
         _layout = QtW.QVBoxLayout()
@@ -31,6 +36,12 @@ class QMacroView(QtW.QWidget):
             ),
         )
 
+        self.__class__._current_widget = self
+
+    @classmethod
+    def current(self) -> QMacroView:
+        return self._current_widget
+
 
 class QMacroViewTabWidget(QtW.QTabWidget):
     def __init__(self, parent: QtW.QWidget | None = None):
@@ -38,15 +49,18 @@ class QMacroViewTabWidget(QtW.QTabWidget):
 
         self.add_all_editors()
 
-    def add_editor(self, name: str = "main"):
-        from napari_macrokit import get_macro
-
-        macro = get_macro(name)
+    def add_macro(self, macro: NapariMacro, name: str):
         editor = QCodeEditor(parent=self, macro=macro)
         editor.setReadOnly(True)
         self.addTab(editor, name)
         self.setCurrentIndex(self.count() - 1)
         return editor
+
+    def add_editor(self, name: str = "main"):
+        from napari_macrokit import get_macro
+
+        macro = get_macro(name)
+        return self.add_macro(macro, name)
 
     def add_all_editors(self):
         from napari_macrokit import list_macro_keys
