@@ -1,9 +1,9 @@
 import napari
 import numpy as np
 import pytest
-from macrokit import Symbol, symbol
+from macrokit import symbol
 
-from napari_macrokit._macrokit_ext import NapariMacro
+from napari_macrokit._macrokit_ext import NapariMacro, SymbolGen
 
 from . import _utils
 
@@ -132,8 +132,8 @@ def test_layer_data_tuple():
     out = func(data)
     out2 = func2(out[0])
 
-    _data = Symbol.asvar(data)
-    _out = Symbol.asvar(out)
-    _out2 = Symbol.asvar(out2)
-    assert str(macro[0]) == f"{_out} = func({_data})"
-    assert str(macro[1]) == f"{_out2} = func2({_out}[0])"
+    _data = SymbolGen.as_renamed_symbol(data)
+    _out = SymbolGen.as_renamed_symbol(out)
+    _out2 = SymbolGen.as_renamed_symbol(out2)
+    assert str(macro[0]) == f"layer_data_tuple0 = func({_data})"
+    assert str(macro[1]) == f"layer_data_tuple1 = func2(layer_data_tuple0[0])"

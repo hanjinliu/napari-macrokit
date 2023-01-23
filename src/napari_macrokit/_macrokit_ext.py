@@ -15,14 +15,16 @@ from macrokit import (
     symbol,
 )
 
-from napari_macrokit import _literals as _lit
-
-from ._type_resolution import resolve_single_type
+from napari_macrokit._literals import get_id_safe_class
+from napari_macrokit._rename import SymbolGenerator
+from napari_macrokit._type_resolution import resolve_single_type
 
 _NEW_TYPES: dict[type, Callable[[Any], str]] = {}
 _F = TypeVar("_F", bound=Callable)
 _F1 = TypeVar("_F1", bound=Callable[[Any], str])
-Symbolizer = Callable[[Any], Union[Symbol, Expr]]
+_Symbolizer = Callable[[Any], Union[Symbol, Expr]]
+
+SymbolGen = SymbolGenerator()
 
 
 @overload
@@ -166,15 +168,21 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
         return _record_function(_func_.func, macro)
 
     sig = inspect.signature(_func_)
-    symbolizers: dict[str, Symbolizer] = {}
+    symbolizers: dict[str, _Symbolizer] = {}
 
     for name, param in sig.parameters.items():
         ann = param.annotation
         symbolizers[name] = _get_symbolizer(ann)
+    print("symbolizers:", symbolizers)
+    if sig.return_annotation is not inspect.Parameter.empty:
+        tp = resolve_single_type(sig.return_annotation)
+        return_type = get_id_safe_class(tp, tp)
+    else:
+        return_type = None
 
     @wraps(_func_)
     def wrapper(*args, **kwargs):
-        nonlocal sig, symbolizers, _func_, merge
+        nonlocal sig, symbolizers, _func_, merge, return_type
 
         macro_args, macro_kwargs = _get_macro_arguments(
             sig, symbolizers, *args, **kwargs
@@ -188,6 +196,7 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
         # If the last function call is the same function, merge with the last
         if merge and _get_last_call_name(macro) == expr.args[0]:
             macro.pop()
+            SymbolGen.discard_last()
 
         for tp in _TYPES_NOT_TO_RECORD:
             if isinstance(out, tp):
@@ -205,15 +214,14 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
                 # NOTE: Python literals usually have the same ID, which
                 # causes some fatal bugs in macro recording. As a workaround,
                 # we convert them into custom int/bool type.
-                if isinstance(out, bool):
-                    out = _lit.bool(out)
-                elif isinstance(out, int):
-                    out = _lit.int(out)
-                elif isinstance(out, float):
-                    out = _lit.float(out)
-                elif isinstance(out, str):
-                    out = _lit.str(out)
+                if _cls := get_id_safe_class(type(out), None):
+                    out = _cls(out)
                 sym_out = Symbol.asvar(out)
+
+            if return_type is None:
+                return_type = type(out)
+
+            sym_out = SymbolGen.generate(out, return_type, sym_out)
             expr = Expr(Head.assign, [sym_out, expr])
         macro.append(expr)
         return out
@@ -224,18 +232,32 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
 
 def _get_symbolizer(ann):
     if isinstance(ann, type) or ann is inspect.Parameter.empty:
-        out = symbol
+        out = _as_readable_symbol
     elif hasattr(ann, "__supertype__"):  # NewType
-        out = _NEW_TYPES.get(ann, symbol)
+        if _out := _NEW_TYPES.get(ann, None):
+            out = lambda x: _rename_one(_out(x))
+        else:
+            out = _as_readable_symbol
     else:
         tp = resolve_single_type(ann)
         out = _get_symbolizer(tp)
     return out
 
 
+def _as_readable_symbol(obj):
+    return _rename_one(symbol(obj))
+
+
+def _rename_one(arg: Symbol | Expr):
+    if isinstance(arg, Expr):
+        return Expr(arg.head, [_rename_one(a) for a in arg.args])
+    else:
+        return SymbolGen.rename_symbol(arg)
+
+
 def _get_macro_arguments(
     sig: inspect.Signature,
-    symbolizers: dict[str, Symbolizer],
+    symbolizers: dict[str, _Symbolizer],
     *args,
     **kwargs,
 ):

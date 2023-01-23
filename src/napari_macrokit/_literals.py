@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 from typing import overload
 
@@ -69,3 +71,15 @@ class float(builtins.float):
 
 class str(builtins.str):
     __doc__ = builtins.str.__doc__
+
+
+_ID_SAFE_MAP = {
+    builtins.int: int,
+    builtins.bool: bool,
+    builtins.float: float,
+    builtins.str: str,
+}
+
+
+def get_id_safe_class(cls, default=None) -> type | None:
+    return _ID_SAFE_MAP.get(cls, default)
