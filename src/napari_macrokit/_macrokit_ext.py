@@ -247,20 +247,26 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
 
 def _get_symbolizer(ann):
     if isinstance(ann, type) or ann is inspect.Parameter.empty:
-        out = _as_readable_symbol
+        out = _readable_symbol_from_object
     elif hasattr(ann, "__supertype__"):  # NewType
         if _out := _NEW_TYPES.get(ann, None):
-            out = lambda x: _rename_one(_out(x))
+            out = lambda x: _out(x)
         else:
-            out = _as_readable_symbol
+            out = _readable_symbol_from_object
     else:
         tp = resolve_single_type(ann)
         out = _get_symbolizer(tp)
     return out
 
 
-def _as_readable_symbol(obj):
-    return _rename_one(symbol(obj))
+def _readable_symbol_from_object(obj):
+    sym = symbol(obj)
+    if isinstance(sym, Symbol) and sym.constant:
+        return sym
+    if isinstance(sym, Expr):
+        return Expr(sym.head, [_rename_one(a) for a in sym.args])
+    else:
+        return SymbolGen.rename_or_generate(obj, type(obj), sym)
 
 
 def _rename_one(arg: Symbol | Expr):

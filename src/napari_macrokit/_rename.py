@@ -114,7 +114,17 @@ class SymbolGenerator:
         old_sym = Symbol.asvar(obj)
         return self._rename_map.get(old_sym, old_sym)
 
-    def rename_symbol(self, sym: Any):
+    def rename_symbol(self, sym: Symbol):
         if isinstance(sym, Symbol):
-            return self._rename_map.get(sym, sym)
+            if sym in self._rename_map:
+                return self._rename_map[sym]
+            return sym
         raise TypeError(f"Expected Symbol, got {type(sym)}")
+
+    def rename_or_generate(
+        self, obj: object, objtype: type, old: Symbol
+    ) -> Symbol:
+        if isinstance(old, Symbol):
+            if old in self._rename_map:
+                return self._rename_map[old]
+        return self.generate(obj, objtype, old)

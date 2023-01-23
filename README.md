@@ -10,6 +10,7 @@
 Executable script generation for napari plugins.
 
 This napari plugin aims at making image analysis reproducible with arbitrary input/output types.
+`napari-macrokit` awares of
 
 ## Usage
 
@@ -32,8 +33,8 @@ add(result, 1.0)
 macro
 
 # Out:
-# >>> var054 = add(3.2, 5.4)
-# >>> var07395f0c = add(var054, 1.0)
+# >>> float0 = add(3.2, 5.4)
+# >>> float1 = add(float0, 1.0)
 ```
 
 ## Record GUI Operations
@@ -66,8 +67,8 @@ Running add twice in GUI and you'll find macro updated like below.
 ```python
 macro
 # Out
-# >>> var0 = add(viewer.layers['Image'].data, 0.06)
-# >>> var024 = add(var0, 0.12)
+# >>> image0 = add(viewer.layers['Image'].data, 0.06)
+# >>> image1 = add(image0, 0.12)
 ```
 
 ## Example of Combining Plugins
@@ -126,9 +127,9 @@ binary = threshold(out, thresh)
 
 macro
 # Out
-# >>> var5c0b2 = gaussian_filter(var0, 2.0)
-# >>> var5b8c0 = estimate_background(var5c0b2)
-# >>> var5c0c4 = threshold(var5c0b2, var5b8c0)
+# >>> image0 = gaussian_filter(arr0, 2.0)
+# >>> float0 = estimate_background(image0)
+# >>> image1 = threshold(image1, float0)
 ```
 
 

@@ -102,7 +102,11 @@ def _register_napari_types():
                         out = layer.name
                         break
         if out is None:
-            return symbol(data)
+            from napari_macrokit._macrokit_ext import (
+                _readable_symbol_from_object,
+            )
+
+            return _readable_symbol_from_object(data)
         return _viewer_.layers[out].data.expr
 
     def find_name_1(
@@ -121,7 +125,11 @@ def _register_napari_types():
                         out = layer.name
                         break
         if out is None:
-            return symbol(data)
+            from napari_macrokit._macrokit_ext import (
+                _readable_symbol_from_object,
+            )
+
+            return _readable_symbol_from_object(data)
         return _viewer_.layers[out].data.expr
 
     register_new_type(
