@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
+
+from macrokit import Symbol
 
 if TYPE_CHECKING:
     from ._macrokit_ext import NapariMacro
@@ -65,3 +67,10 @@ def collect_macro(
 
 def available_keys() -> list[str]:
     return list(_MACROS.keys())
+
+
+def symbol_of(obj: Any) -> Symbol:
+    """Get the symbol object used to represent the input object."""
+    from napari_macrokit._macrokit_ext import SymbolGen
+
+    return SymbolGen.as_renamed_symbol(obj)

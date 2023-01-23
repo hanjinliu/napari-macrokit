@@ -3,7 +3,8 @@ import numpy as np
 import pytest
 from macrokit import symbol
 
-from napari_macrokit._macrokit_ext import NapariMacro, SymbolGen
+from napari_macrokit import symbol_of
+from napari_macrokit._macrokit_ext import NapariMacro
 
 from . import _utils
 
@@ -130,10 +131,35 @@ def test_layer_data_tuple():
 
     data = _utils.image_data()
     out = func(data)
-    out2 = func2(out[0])
+    func2(out[0])
 
-    _data = SymbolGen.as_renamed_symbol(data)
-    _out = SymbolGen.as_renamed_symbol(out)
-    _out2 = SymbolGen.as_renamed_symbol(out2)
+    _data = symbol_of(data)
     assert str(macro[0]) == f"layer_data_tuple0 = func({_data})"
-    assert str(macro[1]) == f"layer_data_tuple1 = func2(layer_data_tuple0[0])"
+    assert str(macro[1]) == "layer_data_tuple1 = func2(layer_data_tuple0[0])"
+
+
+def test_merge():
+    macro = NapariMacro()
+
+    @macro.record(merge=True)
+    def func(a: int, b: bool) -> int:
+        if b:
+            return -a
+        return a
+
+    @macro.record(merge=True)
+    def func2(t: int):
+        return t + 1
+
+    out = func(1, True)
+    _int0 = symbol_of(out)
+    assert len(macro) == 1 and str(macro[0]) == f"{_int0} = func(1, True)"
+    func(2, True)
+    assert len(macro) == 1 and str(macro[0]) == f"{_int0} = func(2, True)"
+    result = func(2, False)
+    assert len(macro) == 1 and str(macro[0]) == f"{_int0} = func(2, False)"
+    out = func2(result)
+    _int1 = symbol_of(out)
+    assert len(macro) == 2
+    assert str(macro[0]) == f"{_int0} = func(2, False)"
+    assert str(macro[1]) == f"{_int1} = func2({_int0})"

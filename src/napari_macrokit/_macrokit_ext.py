@@ -51,11 +51,16 @@ def register_new_type(tp, function=None):
 
 class NapariMacro(BaseMacro):
     def __init__(self):
+        import datetime
+
         super().__init__()
+        self._created_time = datetime.datetime.now()
 
     def __repr__(self) -> str:
         out = []
         for line in str(self).split("\n"):
+            if line.strip() == "":
+                continue
             if line.startswith("\t"):
                 out.append(f"... {line}")
             else:
@@ -73,6 +78,18 @@ class NapariMacro(BaseMacro):
         ...
 
     def record(self, obj=None, *, merge: bool = False):
+        """
+        Record input function.
+
+        Parameters
+        ----------
+        obj : callable, optional
+            The function to be recorded.
+        merge : bool, default is False
+            If true, and the last function call was from the same function,
+            then overwrite the last line of the macro.
+        """
+
         def wrapper(f):
             if isinstance(f, Callable) and not isinstance(f, type):
                 return _record_function(f, macro=self, merge=merge)
@@ -123,6 +140,8 @@ class NapariMacro(BaseMacro):
         >>> @macro.record
         >>> def func(a: int, b: str):
         >>>     ...
+
+        `auto_call=True` is interpreted as `merge=True`.
         """
         from magicgui import magicgui
 
@@ -241,7 +260,7 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
         macro.append(expr)
         return out
 
-    store(wrapper)
+    store(_func_)
     return wrapper
 
 
