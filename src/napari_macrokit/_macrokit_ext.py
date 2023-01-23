@@ -14,6 +14,7 @@ from macrokit import (
     store_sequence,
     symbol,
 )
+from magicgui.widgets import FunctionGui
 
 from napari_macrokit._literals import get_id_safe_class
 from napari_macrokit._rename import SymbolGenerator
@@ -22,6 +23,7 @@ from napari_macrokit._type_resolution import resolve_single_type
 _NEW_TYPES: dict[type, Callable[[Any], str]] = {}
 _F = TypeVar("_F", bound=Callable)
 _F1 = TypeVar("_F1", bound=Callable[[Any], str])
+_R = TypeVar("_R")
 _Symbolizer = Callable[[Any], Union[Symbol, Expr]]
 
 SymbolGen = SymbolGenerator()
@@ -77,6 +79,20 @@ class NapariMacro(BaseMacro):
             raise TypeError(f"Cannot record {type(f)}")
 
         return wrapper if obj is None else wrapper(obj)
+
+    @overload
+    def magicgui(
+        self, function: Callable[..., _R], **kwargs
+    ) -> FunctionGui[_R]:
+        ...
+
+    @overload
+    def magicgui(
+        self,
+        function: Literal[None] = None,
+        **kwargs,
+    ) -> Callable[[Callable[..., _R]], FunctionGui[_R]]:
+        ...
 
     def magicgui(
         self,
@@ -173,7 +189,6 @@ def _record_function(_func_: _F, macro: NapariMacro, merge: bool) -> _F:
     for name, param in sig.parameters.items():
         ann = param.annotation
         symbolizers[name] = _get_symbolizer(ann)
-    print("symbolizers:", symbolizers)
     if sig.return_annotation is not inspect.Parameter.empty:
         tp = resolve_single_type(sig.return_annotation)
         return_type = get_id_safe_class(tp, tp)

@@ -97,6 +97,9 @@ class QCodeEditor(QtW.QPlainTextEdit):
         @macro.on_appended.append
         def _on_appended(expr):
             self.appendPlainText(str(expr))
+            cursor = self.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
+            self.setTextCursor(cursor)
 
         @macro.on_popped.append
         def _on_removed(expr):
