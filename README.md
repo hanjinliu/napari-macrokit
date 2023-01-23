@@ -71,9 +71,9 @@ macro
 # >>> image1 = add(image0, 0.12)
 ```
 
-## Example of Combining Plugins
+## Combining Plugins
 
-Suppose you have two modules that uses `napari-macrokit`.
+Suppose you have two modules that use `napari-macrokit`.
 
 ```python
 # napari_module_0.py
@@ -107,16 +107,16 @@ def estimate_background(image: ImageData) -> float:
 
 ```
 
-You can use functions from both modules to build a analysis workflow by creating a merged macro object with `get_merged_macro` function.
+You can use functions from both modules to build an analysis workflow by collecting existing macro objects with `collect_macro` function. All the recordable actions in the modules will also be recorded to the returned macro object.
 
 ```python
 import numpy as np
-from napari_macrokit import get_merged_macro
+from napari_macrokit import collect_macro
 from napari_module_0 import gaussian_filter, threshold
 from napari_module_1 import estimate_background
 
 # global_macro will record all the macro available at this point
-global_macro = get_merged_macro()
+global_macro = collect_macro()
 
 # start image analysis!
 image = np.random.random((100, 100))
@@ -131,7 +131,6 @@ macro
 # >>> float0 = estimate_background(image0)
 # >>> image1 = threshold(image1, float0)
 ```
-
 
 ---------------------------------
 

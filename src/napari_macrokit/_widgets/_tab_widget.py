@@ -63,10 +63,10 @@ class QMacroViewTabWidget(QtW.QTabWidget):
         return self.add_macro(macro, name)
 
     def add_all_editors(self):
-        from napari_macrokit import list_macro_keys
+        from napari_macrokit import available_keys
 
         existing_names = {self.tabText(i) for i in range(self.count())}
-        for name in list_macro_keys():
+        for name in available_keys():
             if name not in existing_names:
                 self.add_editor(name)
 

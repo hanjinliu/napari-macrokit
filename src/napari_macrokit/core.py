@@ -24,9 +24,7 @@ def get_macro(name: str = "main") -> NapariMacro:
     return macro
 
 
-def merge_macros(
-    macros: Iterable[NapariMacro], name: str = "merged"
-) -> NapariMacro:
+def _merge_macros(macros: Iterable[NapariMacro], name) -> NapariMacro:
     macros = list(macros)
     if name in _MACROS:
         raise ValueError(f"Macro name {name} is already in use.")
@@ -39,14 +37,31 @@ def merge_macros(
     return new
 
 
-def get_merged_macro(
-    name: str = "merged", children: list[str] | None = None
+def collect_macro(
+    name: str = "<collection>", children: list[str] | None = None
 ) -> NapariMacro:
+    """
+    Collect all the macro objects that exist at this point and link them
+    to the returned macro.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name of the macro to be returned
+    children : list of str, optional
+        List of names of macro objects that will be collected. Collect
+        all by default.
+
+    Returns
+    -------
+    NapariMacro
+        The macro object.
+    """
     if children is None:
-        children = list_macro_keys()
+        children = available_keys()
     macros = [get_macro(name) for name in children]
-    return merge_macros(macros, name)
+    return _merge_macros(macros, name)
 
 
-def list_macro_keys() -> list[str]:
+def available_keys() -> list[str]:
     return list(_MACROS.keys())

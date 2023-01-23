@@ -2,7 +2,7 @@ import numpy as np
 from napari.types import ImageData
 from scipy import ndimage as ndi
 
-from napari_macrokit import get_macro, get_merged_macro
+from napari_macrokit import collect_macro, get_macro
 
 
 def module_0():
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     estimate_background = module_1()
 
     # global_macro will record all the macro available at this point
-    global_macro = get_merged_macro()
+    global_macro = collect_macro()
 
     image = np.random.random((100, 100))  # sample image
     out = gaussian_filter(image, 2.0)
