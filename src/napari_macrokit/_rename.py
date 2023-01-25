@@ -72,10 +72,14 @@ class TypeInfoMap(MutableMapping[type, PrefixInfo]):
         return pref
 
     def new_prefix(self, objtype: type, default: str | None = None):
+        """Make a new prefix valid as an identifier."""
         if default is None:
             default = _DEFAULT_PREFIX.get(objtype, None)
             if default is None:
                 default = objtype.__name__.split(".")[-1].lower()
+                # some type names are not valid as an identifier.
+                if not default.isidentifier():
+                    default = _remove_bad_chars(default)
         info = PrefixInfo(self.coerce_prefix(default))
         self[objtype] = info
         return info
@@ -92,6 +96,7 @@ class SymbolGenerator:
         self._last_renamed: tuple[Symbol, type] | None = None
 
     def generate(self, obj: object, objtype: type, old: Symbol) -> Symbol:
+        """Generate an unique symbol."""
         if renamed := self._rename_map.get(old, None):
             return renamed
         info = self._type_infos.get(objtype, None)
@@ -128,3 +133,8 @@ class SymbolGenerator:
             if old in self._rename_map:
                 return self._rename_map[old]
         return self.generate(obj, objtype, old)
+
+
+def _remove_bad_chars(txt: str):
+    table = str.maketrans(dict.fromkeys("[]{}().,+-*/=~^|;:@?<>!\"#$%&'", "_"))
+    return txt.translate(table)
