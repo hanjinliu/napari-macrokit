@@ -1,7 +1,7 @@
 import pytest
 
 from napari_macrokit import available_keys, get_macro
-from napari_macrokit.core import collect_macro, temp_macro
+from napari_macrokit.core import _MACROS, collect_macro, temp_macro
 
 from ._utils import macro_cleanup
 
@@ -59,6 +59,7 @@ def test_collect_macro():
         assert len(macro) == 2
         assert str(macro[0]) == "x0 = 0"
         assert str(macro[1]) == "x1 = 0"
+        _MACROS.pop("<collection>")
 
 
 def test_collect_macro_partially():
