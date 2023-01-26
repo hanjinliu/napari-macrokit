@@ -76,6 +76,7 @@ def test_collect_macro_partially():
         assert str(macro[0]) == "x0 = 0"
         assert str(macro[1]) == "x2 = 0"
         assert str(m1[0]) == "x1 = 0"
+        _MACROS.pop("<collection>")
 
 
 def test_macro_repr():

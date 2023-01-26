@@ -7,12 +7,19 @@ del register_all
 
 from ._macrokit_ext import set_unlinked, set_unlinked_context
 from ._widgets import QMacroView
-from .core import available_keys, collect_macro, get_macro, symbol_of
+from .core import (
+    available_keys,
+    collect_macro,
+    get_macro,
+    symbol_of,
+    temp_macro,
+)
 
 __all__ = [
     "get_macro",
     "available_keys",
     "collect_macro",
+    "temp_macro",
     "symbol_of",
     "QMacroView",
     "set_unlinked",

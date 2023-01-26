@@ -182,14 +182,8 @@ def set_unlinked(*types: type):
 @contextmanager
 def set_unlinked_context(*types: type):
     """Set types that will not be tracked as output."""
-    _types = set(types)
-    if None in _types:
-        _types.discard(None)
-        _types.add(type(None))
-
     _old_state = _TYPES_NOT_TO_RECORD.copy()
-    _TYPES_NOT_TO_RECORD.clear()
-    _TYPES_NOT_TO_RECORD.update(_types)
+    set_unlinked(*types)
     try:
         yield
     finally:

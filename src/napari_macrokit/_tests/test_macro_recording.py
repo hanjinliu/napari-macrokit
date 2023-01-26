@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from macrokit import symbol
 
-from napari_macrokit import symbol_of
+from napari_macrokit import set_unlinked_context, symbol_of
 from napari_macrokit._macrokit_ext import NapariMacro
 
 from . import _utils
@@ -211,3 +211,38 @@ def test_magicgui_with_autocall():
     assert len(macro) == 1 and str(macro[0]) == "f(0)"
     f(1)
     assert len(macro) == 1 and str(macro[0]) == "f(1)"
+
+
+def test_unlink_types():
+    macro = NapariMacro()
+
+    @macro.record
+    def f():
+        return 0
+
+    @macro.record
+    def g():
+        return "a"
+
+    @macro.record
+    def h():
+        return 1.0
+
+    with set_unlinked_context(int, str):
+        f()
+        g()
+        out = h()
+
+    _out = symbol_of(out)
+    assert len(macro) == 3
+    assert str(macro[0]) == "f()"
+    assert str(macro[1]) == "g()"
+    assert str(macro[2]) == f"{_out} = h()"
+
+    fout = symbol_of(f())
+    gout = symbol_of(g())
+    hout = symbol_of(h())
+    assert len(macro) == 6
+    assert str(macro[3]) == f"{fout} = f()"
+    assert str(macro[4]) == f"{gout} = g()"
+    assert str(macro[5]) == f"{hout} = h()"
