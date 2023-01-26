@@ -177,3 +177,37 @@ def test_merge():
 )
 def test_consistency(val):
     assert symbol(val).eval() == val
+
+
+@pytest.mark.parametrize("obj", [0, int])
+def test_wrong_type(obj):
+    macro = NapariMacro()
+    with pytest.raises(TypeError):
+        macro.record(obj)
+
+
+def test_magicgui():
+    macro = NapariMacro()
+
+    @macro.magicgui
+    def f(x: int):
+        pass
+
+    assert f.x.widget_type == "SpinBox"
+    f()
+    assert str(macro[0]) == "f(0)"
+
+
+def test_magicgui_with_autocall():
+    macro = NapariMacro()
+
+    @macro.magicgui(auto_call=True)
+    def f(x: int):
+        pass
+
+    assert f.x.widget_type == "SpinBox"
+    assert f.call_button is None
+    f(0)
+    assert len(macro) == 1 and str(macro[0]) == "f(0)"
+    f(1)
+    assert len(macro) == 1 and str(macro[0]) == "f(1)"

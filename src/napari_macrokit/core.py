@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable
+from contextlib import contextmanager
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ContextManager,
+    Iterable,
+    Sequence,
+    overload,
+)
 
 from macrokit import Symbol
 
@@ -12,6 +20,7 @@ _MACROS: dict[str, NapariMacro] = {}
 
 
 def get_macro(name: str = "main") -> NapariMacro:
+    """Get the macro object of given name."""
     from ._macrokit_ext import NapariMacro
     from ._widgets import QMacroView
 
@@ -24,6 +33,42 @@ def get_macro(name: str = "main") -> NapariMacro:
     if widget := QMacroView.current():
         widget._tabwidget.add_macro(macro, name)
     return macro
+
+
+def _safe_get_macro(name: str) -> NapariMacro:
+    if name in _MACROS:
+        raise ValueError(f"Macro of name {name!r} already exists.")
+    return get_macro(name)
+
+
+@overload
+def temp_macro(name: str = "temp") -> ContextManager[NapariMacro]:
+    ...
+
+
+@overload
+def temp_macro(name: Sequence[str]) -> ContextManager[list[NapariMacro]]:
+    ...
+
+
+@contextmanager
+def temp_macro(name: str = "temp") -> ContextManager[NapariMacro]:
+    """Create temporary macro object(s)."""
+    is_sequence = not isinstance(name, str)
+    if is_sequence:
+        macro: list[NapariMacro] = []
+        for n in name:
+            macro.append(_safe_get_macro(n))
+    else:
+        macro = _safe_get_macro(name)
+    try:
+        yield macro
+    finally:
+        if is_sequence:
+            for n in name:
+                _MACROS.pop(n, None)
+        else:
+            _MACROS.pop(name, None)
 
 
 def _merge_macros(macros: Iterable[NapariMacro], name) -> NapariMacro:
@@ -61,7 +106,9 @@ def collect_macro(
     """
     if children is None:
         children = available_keys()
-    macros = [get_macro(name) for name in children]
+    if not isinstance(name, str):
+        raise TypeError(f"`name` must be str, got {type(name)}")
+    macros = [get_macro(n) for n in children]
     return _merge_macros(macros, name)
 
 

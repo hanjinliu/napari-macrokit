@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import numpy as np
 
 
@@ -34,3 +36,17 @@ def tracks_data() -> np.ndarray:
 
 def vectors_data() -> np.ndarray:
     return np.arange(60).reshape(10, 2, 3)
+
+
+@contextmanager
+def macro_cleanup():
+    from napari_macrokit.core import _MACROS
+
+    old_keys = set(_MACROS.keys())
+
+    try:
+        yield
+    finally:
+        news = set(_MACROS.keys()).difference(old_keys)
+        for k in news:
+            _MACROS.pop(k)

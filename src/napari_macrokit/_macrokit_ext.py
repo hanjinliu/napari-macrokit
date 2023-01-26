@@ -61,7 +61,7 @@ class NapariMacro(BaseMacro):
         for line in str(self).split("\n"):
             if line.strip() == "":
                 continue
-            if line.startswith("\t"):
+            if line.startswith("    "):
                 out.append(f"... {line}")
             else:
                 out.append(f">>> {line}")
