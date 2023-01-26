@@ -69,6 +69,7 @@ class TypeInfoMap(MutableMapping[type, PrefixInfo]):
         i = 0
         while pref in self._existing_prefixes:
             pref = f"{pref_stem}{i}_"
+            i += 1
         return pref
 
     def new_prefix(self, objtype: type, default: str | None = None):

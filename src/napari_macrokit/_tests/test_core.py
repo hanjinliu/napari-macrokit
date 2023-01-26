@@ -6,6 +6,12 @@ from napari_macrokit.core import _MACROS, collect_macro, temp_macro
 from ._utils import macro_cleanup
 
 
+def test_get_non_string():
+    with macro_cleanup():
+        with pytest.raises(TypeError):
+            get_macro(0)
+
+
 def test_same_macro():
     with macro_cleanup():
 
@@ -77,6 +83,21 @@ def test_collect_macro_partially():
         assert str(macro[1]) == "x2 = 0"
         assert str(m1[0]) == "x1 = 0"
         _MACROS.pop("<collection>")
+
+
+def test_collect_macro_error():
+    with temp_macro(["m0", "m1", "m2"]):
+        with pytest.raises(ValueError):
+            collect_macro(name="m0")  # same name
+        with pytest.raises(ValueError):
+            collect_macro(children=["m0", "m1", "m0"])  # duplicate
+
+
+def test_temp_macro_error():
+    with temp_macro(["m0", "m1", "m2"]):
+        with pytest.raises(ValueError):
+            with temp_macro("m0"):
+                pass
 
 
 def test_macro_repr():

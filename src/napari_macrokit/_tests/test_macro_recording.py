@@ -262,3 +262,64 @@ def test_remove_layer_during_call(make_napari_viewer):
 
     func(viewer.layers[0].data)
     assert len(macro) == 1
+
+
+def test_keyword_like_symbol():
+    class Import:
+        pass
+
+    macro = NapariMacro()
+
+    @macro.record
+    def f():
+        return Import()
+
+    f()
+    assert len(macro) == 1
+
+
+def test_bad_type_name():
+    class Bad:
+        __name__ = "$%&"
+
+    macro = NapariMacro()
+
+    @macro.record
+    def f():
+        return Bad()
+
+    f()
+    assert len(macro) == 1
+
+
+def test_same_type_name():
+    class XYZ:
+        pass
+
+    class XYz:
+        pass
+
+    class Xyz:
+        pass
+
+    macro = NapariMacro()
+
+    @macro.record
+    def f0():
+        return XYZ()
+
+    @macro.record
+    def f1():
+        return XYz()
+
+    @macro.record
+    def f2():
+        return Xyz()
+
+    f0()
+    f1()
+    f2()
+    assert len(macro) == 3
+    assert str(macro[0]) == "xyz0 = f0()"
+    assert str(macro[1]) == "xyz0_0 = f1()"
+    assert str(macro[2]) == "xyz1_0 = f2()"

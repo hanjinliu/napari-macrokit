@@ -41,14 +41,12 @@ def _safe_get_macro(name: str) -> NapariMacro:
     return get_macro(name)
 
 
+# fmt: off
 @overload
-def temp_macro(name: str = "temp") -> ContextManager[NapariMacro]:
-    ...
-
-
+def temp_macro(name: str = "temp") -> ContextManager[NapariMacro]: ...  # pragma: no cover # noqa
 @overload
-def temp_macro(name: Sequence[str]) -> ContextManager[list[NapariMacro]]:
-    ...
+def temp_macro(name: Sequence[str]) -> ContextManager[list[NapariMacro]]: ...  # pragma: no cover # noqa
+# fmt: on
 
 
 @contextmanager
