@@ -1,3 +1,5 @@
+import datetime
+
 import napari
 import numpy as np
 import pytest
@@ -163,3 +165,15 @@ def test_merge():
     assert len(macro) == 2
     assert str(macro[0]) == f"{_int0} = func(2, False)"
     assert str(macro[1]) == f"{_int1} = func2({_int0})"
+
+
+@pytest.mark.parametrize(
+    "val",
+    [
+        datetime.datetime(2023, 1, 26, 10, 44, 23),
+        datetime.date(2023, 1, 26),
+        datetime.time(10, 45, 23),
+    ],
+)
+def test_consistency(val):
+    assert symbol(val).eval() == val

@@ -47,7 +47,8 @@ def _register_builtin_types():
         lambda e: Expr.parse_call(_date, (e.year, e.month, e.day), {}),
     )
     register_type(
-        datetime.time, lambda e: Expr.parse_call(_time, (e.hour, e.minute), {})
+        datetime.time,
+        lambda e: Expr.parse_call(_time, (e.hour, e.minute, e.second), {}),
     )
     register_type(
         datetime.timedelta,
