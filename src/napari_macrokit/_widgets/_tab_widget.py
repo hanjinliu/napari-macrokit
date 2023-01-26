@@ -6,7 +6,7 @@ from qtpy import QtWidgets as QtW
 
 from ._code_editor import QCodeEditor
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from napari_macrokit._macrokit_ext import NapariMacro
 
 
@@ -80,7 +80,7 @@ class QMacroViewTabWidget(QtW.QTabWidget):
         if self.widget(index).macro is None:
             return self.removeTab(index)
 
-    if TYPE_CHECKING:
+    if TYPE_CHECKING:  # pragma: no cover
 
         def widget(self, index: int) -> QCodeEditor:
             ...

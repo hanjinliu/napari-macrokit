@@ -16,53 +16,32 @@ class bool(builtins.int):
     def __repr__(self) -> str:
         return repr(builtins.bool(self))
 
+    # fmt: off
     @overload
-    def __and__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __and__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __and__(self, __x: builtins.int) -> builtins.int:
-        ...
-
+    def __and__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
     @overload
-    def __or__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __or__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __or__(self, __x: builtins.int) -> builtins.int:
-        ...
-
+    def __or__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
     @overload
-    def __xor__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __xor__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __xor__(self, __x: builtins.int) -> builtins.int:
-        ...
-
+    def __xor__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
     @overload
-    def __rand__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __rand__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __rand__(self, __x: builtins.int) -> builtins.int:
-        ...
-
+    def __rand__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
     @overload
-    def __ror__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __ror__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __ror__(self, __x: builtins.int) -> builtins.int:
-        ...
-
+    def __ror__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
     @overload
-    def __rxor__(self, __x: builtins.bool) -> builtins.bool:
-        ...
-
+    def __rxor__(self, __x: builtins.bool) -> builtins.bool: ...  # pragma: no cover
     @overload
-    def __rxor__(self, __x: builtins.int) -> builtins.int:
-        ...
+    def __rxor__(self, __x: builtins.int) -> builtins.int: ...  # pragma: no cover
+    # fmt: on
 
 
 class float(builtins.float):

@@ -4,6 +4,7 @@ import napari
 import numpy as np
 import pytest
 from macrokit import symbol
+from napari.types import ImageData
 
 from napari_macrokit import set_unlinked_context, symbol_of
 from napari_macrokit._macrokit_ext import NapariMacro
@@ -246,3 +247,18 @@ def test_unlink_types():
     assert str(macro[3]) == f"{fout} = f()"
     assert str(macro[4]) == f"{gout} = g()"
     assert str(macro[5]) == f"{hout} = h()"
+
+
+def test_remove_layer_during_call(make_napari_viewer):
+    viewer = make_napari_viewer()
+    macro = NapariMacro()
+
+    viewer.add_image(_utils.image_data())
+
+    @macro.record
+    def func(layer: ImageData):
+        viewer.layers.clear()
+        return layer
+
+    func(viewer.layers[0].data)
+    assert len(macro) == 1

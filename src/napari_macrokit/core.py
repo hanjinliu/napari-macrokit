@@ -12,7 +12,7 @@ from typing import (
 
 from macrokit import Symbol
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ._macrokit_ext import NapariMacro
 
 

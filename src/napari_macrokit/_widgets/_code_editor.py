@@ -194,21 +194,6 @@ class QCodeEditor(QtW.QPlainTextEdit):
                 return num, block
         return -1, None
 
-    def block(self, index: int) -> QtGui.QTextBlock | None:
-        """Return the text block at index or None if not found."""
-        for num, block in self._iter_visible_blocks():
-            if num == index:
-                return block
-        return None
-
-    def blocks(self, indices: list[int]) -> list[QtGui.QTextBlock]:
-        blocks: list[QtGui.QTextBlock] = []
-        indices = set(indices)
-        for num, block in self._iter_visible_blocks():
-            if num in indices:
-                blocks.append(block)
-        return blocks
-
     def lineNumberAreaPaintEvent(self, event: QtGui.QPaintEvent):
         painter = QtGui.QPainter(self._line_number_area)
 

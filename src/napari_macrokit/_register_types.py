@@ -30,7 +30,7 @@ def _register_builtin_types():
 
     try:
         from magicgui.widgets._concrete import ListDataView
-    except ImportError:
+    except ImportError:  # pragma: no cover
         pass
     else:
         register_type(ListDataView, lambda e: list(e))
