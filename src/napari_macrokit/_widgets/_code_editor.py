@@ -89,10 +89,6 @@ class QCodeEditor(QtW.QPlainTextEdit):
 
         self.setMinimumHeight(100)
 
-    @property
-    def macro(self) -> BaseMacro:
-        return self._macro
-
     def connectMacro(self, macro: BaseMacro):
         @macro.on_appended.append
         def _on_appended(expr):

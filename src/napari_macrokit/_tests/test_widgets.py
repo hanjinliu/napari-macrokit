@@ -1,4 +1,5 @@
 from pytestqt.qtbot import QtBot
+from qtpy.QtCore import QPoint, Qt
 
 from napari_macrokit import available_keys, temp_macro
 from napari_macrokit._widgets import QMacroView
@@ -61,3 +62,20 @@ def test_duplicate(qtbot: QtBot):
     with temp_macro("m0") as macro:
         macro.append("a = 0")
         wdt._tabwidget.add_duplicate(0)
+
+
+def test_context_menu(qtbot: QtBot):
+    wdt = QMacroView()
+    qtbot.addWidget(wdt)
+    editor = wdt._tabwidget.widget(0)
+    qtbot.mouseClick(editor, Qt.MouseButton.RightButton, pos=QPoint(2, 2))
+
+
+def test_left_area(qtbot: QtBot):
+    wdt = QMacroView()
+    qtbot.addWidget(wdt)
+    editor = wdt._tabwidget.widget(0)
+    qtbot.mousePress(
+        editor._line_number_area, Qt.MouseButton.LeftButton, pos=QPoint(2, 2)
+    )
+    qtbot.mouseMove(editor._line_number_area, pos=QPoint(2, 5))
