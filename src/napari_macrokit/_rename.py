@@ -46,16 +46,16 @@ class TypeInfoMap(MutableMapping[type, PrefixInfo]):
         self._info_map: dict[type, PrefixInfo] = {}
         self._existing_prefixes: set[str] = set()
 
-    def __getitem__(self, __key: str) -> PrefixInfo:
-        return self._info_map[__key]
+    def __getitem__(self, key: str) -> PrefixInfo:
+        return self._info_map[key]
 
-    def __setitem__(self, __key: type, __value: PrefixInfo) -> None:
-        self._info_map[__key] = __value
-        self._existing_prefixes.add(__value.prefix)
+    def __setitem__(self, key: type, value: PrefixInfo) -> None:
+        self._info_map[key] = value
+        self._existing_prefixes.add(value.prefix)
 
-    def __delitem__(self, __key: type) -> None:
-        info = self._info_map.pop(__key)
-        self._existing_prefixes.discard(info)
+    def __delitem__(self, key: type) -> None:
+        info = self._info_map.pop(key)
+        self._existing_prefixes.discard(info.prefix)
 
     def __len__(self) -> int:
         return len(self._info_map)
