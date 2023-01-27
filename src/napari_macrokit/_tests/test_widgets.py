@@ -69,7 +69,7 @@ def test_context_menu(qtbot: QtBot):
         wdt = QMacroView()
         qtbot.addWidget(wdt)
         editor = wdt._tabwidget.widget(0)
-        qtbot.mouseClick(editor, Qt.MouseButton.RightButton, pos=QPoint(2, 2))
+        editor._show_context_menu(QPoint(2, 2))
 
 
 def test_left_area(qtbot: QtBot):
