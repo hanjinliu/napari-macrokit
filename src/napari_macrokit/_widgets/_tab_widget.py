@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from qtpy import QtWidgets as QtW
 
@@ -23,17 +23,32 @@ class QMacroView(QtW.QWidget):
         _layout.addWidget(self._toolbar)
         _layout.addWidget(self._tabwidget)
 
-        self._toolbar.addAction(
-            "Duplicate",
-            lambda: self._tabwidget.add_duplicate(
-                self._tabwidget.currentIndex()
-            ),
+        self._toolbar.addWidget(
+            _push_button(
+                "Duplicate",
+                self._tabwidget.add_duplicate,
+                "Make a duplicate of the macro script in the current tab.",
+            )
         )
-        self._toolbar.addAction(
-            "Close",
-            lambda: self._tabwidget.remove_editor(
-                self._tabwidget.currentIndex()
-            ),
+
+        self._toolbar.addWidget(
+            _push_button(
+                "Close",
+                lambda: self._tabwidget.remove_editor(
+                    self._tabwidget.currentIndex()
+                ),
+                "Close the current tab.",
+            )
+        )
+
+        self._toolbar.addWidget(
+            _push_button(
+                "Save",
+                lambda: self._tabwidget.save_text(
+                    self._tabwidget.currentIndex()
+                ),
+                "Save the current tab.",
+            )
         )
 
         self.__class__._current_widget = self
@@ -41,6 +56,13 @@ class QMacroView(QtW.QWidget):
     @classmethod
     def current(self) -> QMacroView:
         return self._current_widget
+
+
+def _push_button(text: str, slot: Callable, tooltip: str | None = None):
+    button = QtW.QPushButton(text)
+    button.clicked.connect(slot)
+    button.setToolTip(tooltip)
+    return button
 
 
 class QMacroViewTabWidget(QtW.QTabWidget):
@@ -74,11 +96,21 @@ class QMacroViewTabWidget(QtW.QTabWidget):
         name = self.tabText(index) + "-copy"
         editor = QCodeEditor(parent=self)
         editor.setPlainText(self.widget(index).toPlainText())
-        return self.addTab(editor, name)
+        self.addTab(editor, name)
+        return None
 
     def remove_editor(self, index: int):
-        if self.widget(index).macro is None:
+        if self.widget(index)._macro is None:
             return self.removeTab(index)
+
+    def save_text(self, index: int):
+        out, _ = QtW.QFileDialog.getSaveFileName(
+            self, "Save file...", filter="*.py"
+        )
+        print(out)
+        if out:
+            with open(out, mode="w") as f:
+                f.write(self.widget(index).toPlainText())
 
     if TYPE_CHECKING:  # pragma: no cover
 
