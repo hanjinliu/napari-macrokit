@@ -69,7 +69,10 @@ def test_context_menu(qtbot: QtBot):
         wdt = QMacroView()
         qtbot.addWidget(wdt)
         editor = wdt._tabwidget.widget(0)
-        editor._show_context_menu(QPoint(2, 2))
+        topleft = editor._line_number_area.geometry().topLeft()
+        qtbot.mouseClick(
+            editor, Qt.MouseButton.RightButton, pos=topleft + QPoint(2, 2)
+        )
 
 
 def test_left_area(qtbot: QtBot):
@@ -77,9 +80,10 @@ def test_left_area(qtbot: QtBot):
         wdt = QMacroView()
         qtbot.addWidget(wdt)
         editor = wdt._tabwidget.widget(0)
+        topleft = editor._line_number_area.geometry().topLeft()
         qtbot.mousePress(
             editor._line_number_area,
             Qt.MouseButton.LeftButton,
-            pos=QPoint(2, 2),
+            pos=topleft + QPoint(2, 2),
         )
-        qtbot.mouseMove(editor._line_number_area, pos=QPoint(2, 5))
+        qtbot.mouseMove(editor._line_number_area, pos=topleft + QPoint(2, 5))
