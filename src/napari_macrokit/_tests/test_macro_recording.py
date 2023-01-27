@@ -7,6 +7,15 @@ from napari_macrokit import set_unlinked_context, symbol_of
 from napari_macrokit._macrokit_ext import NapariMacro
 
 
+class NoGC:
+    """Store all instances of this class to avoid garbage collection."""
+
+    instances = []
+
+    def __init__(self) -> None:
+        self.__class__.instances.append(self)
+
+
 def test_function_call():
     macro = NapariMacro()
 
@@ -135,7 +144,7 @@ def test_unlink_types():
 
 
 def test_keyword_like_symbol():
-    class Import:
+    class Import(NoGC):
         pass
 
     macro = NapariMacro()
@@ -149,7 +158,7 @@ def test_keyword_like_symbol():
 
 
 def test_bad_type_name():
-    class Bad:
+    class Bad(NoGC):
         pass
 
     Bad.__name__ = "$%&"
@@ -165,13 +174,13 @@ def test_bad_type_name():
 
 
 def test_same_type_name():
-    class XYZ:
+    class XYZ(NoGC):
         pass
 
-    class XYz:
+    class XYz(NoGC):
         pass
 
-    class Xyz:
+    class Xyz(NoGC):
         pass
 
     macro = NapariMacro()
