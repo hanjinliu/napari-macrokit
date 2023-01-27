@@ -65,17 +65,21 @@ def test_duplicate(qtbot: QtBot):
 
 
 def test_context_menu(qtbot: QtBot):
-    wdt = QMacroView()
-    qtbot.addWidget(wdt)
-    editor = wdt._tabwidget.widget(0)
-    qtbot.mouseClick(editor, Qt.MouseButton.RightButton, pos=QPoint(2, 2))
+    with temp_macro("m0"):
+        wdt = QMacroView()
+        qtbot.addWidget(wdt)
+        editor = wdt._tabwidget.widget(0)
+        qtbot.mouseClick(editor, Qt.MouseButton.RightButton, pos=QPoint(2, 2))
 
 
 def test_left_area(qtbot: QtBot):
-    wdt = QMacroView()
-    qtbot.addWidget(wdt)
-    editor = wdt._tabwidget.widget(0)
-    qtbot.mousePress(
-        editor._line_number_area, Qt.MouseButton.LeftButton, pos=QPoint(2, 2)
-    )
-    qtbot.mouseMove(editor._line_number_area, pos=QPoint(2, 5))
+    with temp_macro("m0"):
+        wdt = QMacroView()
+        qtbot.addWidget(wdt)
+        editor = wdt._tabwidget.widget(0)
+        qtbot.mousePress(
+            editor._line_number_area,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(2, 2),
+        )
+        qtbot.mouseMove(editor._line_number_area, pos=QPoint(2, 5))

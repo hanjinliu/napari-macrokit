@@ -112,6 +112,8 @@ class SymbolGenerator:
         return out
 
     def discard_last(self):
+        if self._last_renamed is None:
+            return
         sym, objtype = self._last_renamed
         self._rename_map.pop(sym)
         self._type_infos.decrement_prefix(objtype)
