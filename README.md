@@ -9,7 +9,7 @@
 
 Executable script generation for napari plugins.
 
-![](https://github.com/hanjinliu/napari-macrokit/tree/main/images/example.gif)
+![](https://github.com/hanjinliu/napari-macrokit/blob/main/images/example.gif)
 &uarr; [Example](https://github.com/hanjinliu/napari-macrokit/blob/main/examples/regionprops.py) showing the real-time recording of GUI operation.
 
 This napari plugin aims at making image analysis reproducible with arbitrary input/output types.
